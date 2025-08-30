@@ -1,36 +1,84 @@
 'use client'
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import Link from "next/link";
-import { useAuth } from "@/lib/auth-context";
-import { useState } from "react";
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import Link from "next/link"
+import { useAuth } from '@/lib/auth-context'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+import { toast } from 'sonner'
+
+// Form validation schema
+const signUpSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(50, 'Name must be less than 50 characters'),
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters').max(100, 'Password must be less than 100 characters')
+})
+
+type SignUpFormData = z.infer<typeof signUpSchema>
 
 export default function SignUp() {
-  const { signUp } = useAuth();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { signUp, user } = useAuth()
+  const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm<SignUpFormData>({
+    resolver: zodResolver(signUpSchema)
+  })
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard')
+    }
+  }, [user, router])
+
+  const onSubmit = async (data: SignUpFormData) => {
+    setIsLoading(true)
+    setError(null)
 
     try {
-      await signUp(email, password, name);
-      setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to create account');
+      await signUp(data.email, data.password, data.name)
+      toast.success('Account created successfully! Please check your email to confirm your account.')
+      router.push('/auth/signin')
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred during sign up'
+      
+      // Show user-friendly error messages
+      if (errorMessage.includes('User already registered')) {
+        setError('An account with this email already exists. Please sign in instead.')
+        toast.error('Email already registered')
+      } else if (errorMessage.includes('Password should be at least')) {
+        setError('Password must be at least 6 characters long.')
+        toast.error('Password too short')
+      } else if (errorMessage.includes('Invalid email')) {
+        setError('Please enter a valid email address.')
+        toast.error('Invalid email format')
+      } else if (errorMessage.includes('Signup is disabled')) {
+        setError('New account registration is currently disabled.')
+        toast.error('Registration temporarily unavailable')
+      } else if (errorMessage.includes('Network error')) {
+        setError('Network connection error. Please check your internet connection.')
+        toast.error('Connection error - please try again')
+      } else {
+        setError(errorMessage)
+        toast.error('Account creation failed - please try again')
+      }
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <div className="flex justify-center items-center min-h-screen">
@@ -40,57 +88,64 @@ export default function SignUp() {
           <CardDescription>Create a new account to start polling</CardDescription>
         </CardHeader>
         <CardContent>
-          {success ? (
-            <div className="bg-green-50 text-green-600 p-4 rounded-md">
-              <p className="font-medium">Registration successful!</p>
-              <p className="text-sm mt-1">Please check your email to confirm your account.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-4">
-                {error && (
-                  <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm">
-                    {error}
-                  </div>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div className="grid gap-4">
+              {error && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                  {error}
+                </div>
+              )}
+              <div className="grid gap-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Your full name"
+                  {...register('name')}
+                  disabled={isLoading}
+                />
+                {errors.name && (
+                  <p className="text-sm text-red-600">{errors.name.message}</p>
                 )}
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input 
-                    id="name" 
-                    type="text" 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="m@example.com" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input 
-                    id="password" 
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Creating Account...' : 'Create Account'}
-                </Button>
               </div>
-            </form>
-          )}
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  {...register('email')}
+                  disabled={isLoading}
+                />
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email.message}</p>
+                )}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="At least 6 characters"
+                  {...register('password')}
+                  disabled={isLoading}
+                />
+                {errors.password && (
+                  <p className="text-sm text-red-600">{errors.password.message}</p>
+                )}
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Creating Account...
+                  </div>
+                ) : (
+                  'Create Account'
+                )}
+              </Button>
+            </div>
+          </form>
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">
@@ -102,5 +157,5 @@ export default function SignUp() {
         </CardFooter>
       </Card>
     </div>
-  );
+  )
 }
