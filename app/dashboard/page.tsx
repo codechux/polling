@@ -1,6 +1,10 @@
+'use client'
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import  ProtectedRoute  from "@/components/protected-route";
+import { useAuth } from "@/lib/auth-context";
 
 // Mock data for user's polls
 const userPolls = [
@@ -9,7 +13,9 @@ const userPolls = [
   { id: 3, title: "Most Anticipated Tech of 2024", votes: 64, created: "3 days ago", status: "ended" },
 ];
 
-export default function Dashboard() {
+function DashboardContent() {
+  const { user } = useAuth();
+  
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
@@ -18,6 +24,12 @@ export default function Dashboard() {
           <Link href="/polls/create">Create New Poll</Link>
         </Button>
       </div>
+      
+      {user && (
+        <div className="mb-6 p-4 bg-muted rounded-lg">
+          <p className="text-sm">Signed in as: <strong>{user.email}</strong></p>
+        </div>
+      )}
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {userPolls.map((poll) => (
@@ -50,3 +62,12 @@ export default function Dashboard() {
     </div>
   );
 }
+
+export default function Dashboard() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
+  );
+}
+  
