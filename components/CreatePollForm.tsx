@@ -22,7 +22,7 @@ const createPollSchema = z.object({
       value: z.string().min(1, 'Option cannot be empty').max(500, 'Option must be less than 500 characters')
     })
   ).min(2, 'Poll must have at least 2 options').max(20, 'Poll cannot have more than 20 options'),
-  duration: z.number().min(1).max(365),
+  duration: z.number().min(0.5).max(365),
   allowMultipleVotes: z.boolean(),
   isAnonymous: z.boolean()
 })
@@ -211,6 +211,7 @@ export default function CreatePollForm() {
                 {...register('duration', { valueAsNumber: true })}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               >
+                <option value={0.5}>12 hours</option>
                 <option value={1}>1 day</option>
                 <option value={3}>3 days</option>
                 <option value={7}>1 week</option>
