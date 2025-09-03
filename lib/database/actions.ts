@@ -45,12 +45,12 @@ type UserPollSummary = {
 }
 
 // Centralized Supabase client creation
-async function getSupabaseClient(): Promise<SupabaseClient> {
+export async function getSupabaseClient(): Promise<SupabaseClient> {
   return await createSupabaseServerClient()
 }
 
 // Authentication helper
-async function getAuthenticatedUser(): Promise<AuthenticatedUser> {
+export async function getAuthenticatedUser(): Promise<AuthenticatedUser> {
   const supabase = await getSupabaseClient()
   const { data: { user }, error } = await supabase.auth.getUser()
   
