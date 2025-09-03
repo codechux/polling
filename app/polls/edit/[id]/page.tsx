@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
-import { createSupabaseServerClient } from '@/lib/supabase'
-import { updatePoll } from '@/lib/database/actions'
+import { updatePoll, getAuthenticatedUser, getSupabaseClient } from '@/lib/database/actions'
+import type { Poll } from '@/lib/database/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -14,42 +14,42 @@ interface EditPollPageProps {
   params: Promise<{ id: string }>
 }
 
-async function getPoll(pollId: string, userId: string) {
-  const supabase = await createSupabaseServerClient()
-  
-  const { data: poll, error } = await supabase
-    .from('polls')
-    .select(`
-      id,
-      title,
-      description,
-      is_active,
-      creator_id,
-      share_token
-    `)
-    .eq('id', pollId)
-    .eq('creator_id', userId)
-    .single()
+// Optimized poll fetching for edit operations
+async function getEditablePoll(pollId: string, userId: string): Promise<Pick<Poll, 'id' | 'title' | 'description' | 'is_active' | 'creator_id' | 'share_token'> | null> {
+  try {
+    const supabase = await getSupabaseClient()
+    
+    const { data: poll, error } = await supabase
+      .from('polls')
+      .select('id, title, description, is_active, creator_id, share_token')
+      .eq('id', pollId)
+      .eq('creator_id', userId)
+      .single()
 
-  if (error || !poll) {
+    if (error || !poll) {
+      return null
+    }
+
+    return poll
+  } catch (error) {
+    console.error('Error fetching editable poll:', error)
     return null
   }
-
-  return poll
 }
 
 export default async function EditPollPage({ params }: EditPollPageProps) {
   const { id } = await params
-  const supabase = await createSupabaseServerClient()
   
-  // Get current user
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    redirect('/auth/login')
+  // Get authenticated user using centralized helper
+  let user
+  try {
+    user = await getAuthenticatedUser()
+  } catch {
+    redirect('/auth/signin')
   }
 
-  // Get poll data
-  const poll = await getPoll(id, user.id)
+  // Get poll data with optimized query
+  const poll = await getEditablePoll(id, user.id)
   if (!poll) {
     notFound()
   }
