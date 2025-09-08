@@ -7,6 +7,9 @@ import { formatDistanceToNow } from "date-fns";
 import { DeletePollButton } from "@/components/delete-poll-button";
 import { ErrorBoundary } from "@/components/error-boundary";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 async function DashboardContent() {
   try {
     const polls = await getUserPolls();
@@ -45,12 +48,12 @@ async function DashboardContent() {
                 <CardContent>
                   <div className="flex justify-between items-center">
                     <p className="text-sm text-muted-foreground">
-                      {poll.voteCount} {poll.voteCount === 1 ? 'vote' : 'votes'}
+                      {poll.votes?.[0]?.count || 0} {(poll.votes?.[0]?.count || 0) === 1 ? 'vote' : 'votes'}
                     </p>
                     <span className={`text-xs px-2 py-1 rounded-full ${
-                      poll.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                      poll.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                     }`}>
-                      {poll.status === "active" ? "Active" : "Ended"}
+                      {poll.is_active ? "Active" : "Ended"}
                     </span>
                   </div>
                   {poll.description && (

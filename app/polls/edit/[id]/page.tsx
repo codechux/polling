@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
-import { updatePoll, getAuthenticatedUser, getSupabaseClient } from '@/lib/database/actions'
+import { updatePoll, getAuthenticatedUser } from '@/lib/database/actions'
+import { createSupabaseServerClient } from '@/lib/supabase'
 import type { Poll } from '@/lib/database/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Copy } from 'lucide-react'
 
 interface EditPollPageProps {
   params: Promise<{ id: string }>
@@ -17,7 +18,7 @@ interface EditPollPageProps {
 // Optimized poll fetching for edit operations
 async function getEditablePoll(pollId: string, userId: string): Promise<Pick<Poll, 'id' | 'title' | 'description' | 'is_active' | 'creator_id' | 'share_token'> | null> {
   try {
-    const supabase = await getSupabaseClient()
+    const supabase = await createSupabaseServerClient()
     
     const { data: poll, error } = await supabase
       .from('polls')
@@ -50,6 +51,7 @@ export default async function EditPollPage({ params }: EditPollPageProps) {
 
   // Get poll data with optimized query
   const poll = await getEditablePoll(id, user.id)
+  
   if (!poll) {
     notFound()
   }
@@ -63,98 +65,96 @@ export default async function EditPollPage({ params }: EditPollPageProps) {
   return (
     <div className="container mx-auto py-8 max-w-2xl">
       <div className="mb-6">
-        <Button variant="ghost" asChild className="mb-4">
-          <Link href="/dashboard">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Link>
-        </Button>
+        <Link 
+          href="/dashboard" 
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Dashboard
+        </Link>
         <h1 className="text-3xl font-bold">Edit Poll</h1>
         <p className="text-muted-foreground mt-2">
-          Update your poll details. Note: You cannot modify poll options after creation.
+          Update your poll settings and manage its status.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Poll Details</CardTitle>
-          <CardDescription>
-            Make changes to your poll information below.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form action={handleUpdatePoll} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="title">Poll Title *</Label>
-              <Input
-                id="title"
-                name="title"
-                defaultValue={poll.title}
-                placeholder="Enter your poll question"
-                required
-                maxLength={200}
-              />
-            </div>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Poll Details</CardTitle>
+            <CardDescription>
+              Modify your poll's title, description, and status.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={handleUpdatePoll} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Poll Title</Label>
+                <Input
+                  id="title"
+                  name="title"
+                  type="text"
+                  required
+                  defaultValue={poll.title}
+                  className="w-full"
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
-              <Textarea
-                id="description"
-                name="description"
-                defaultValue={poll.description || ''}
-                placeholder="Add more context to your poll..."
-                maxLength={1000}
-                rows={3}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description (Optional)</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  rows={3}
+                  defaultValue={poll.description || ''}
+                  className="w-full"
+                />
+              </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="isActive"
-                name="isActive"
-                defaultChecked={poll.is_active}
-              />
-              <Label htmlFor="isActive" className="text-sm font-medium">
-                Poll is active (users can vote)
-              </Label>
-            </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="isActive"
+                  name="isActive"
+                  defaultChecked={poll.is_active}
+                />
+                <Label htmlFor="isActive">Poll is active</Label>
+              </div>
 
-            <div className="flex gap-4 pt-4">
-              <Button type="submit" className="flex-1">
+              <Button type="submit" className="w-full">
                 Update Poll
               </Button>
-              <Button type="button" variant="outline" asChild className="flex-1">
-                <Link href="/dashboard">Cancel</Link>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Share Poll</CardTitle>
+            <CardDescription>
+              Share this link with others to collect votes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex space-x-2">
+              <Input
+                readOnly
+                value={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/polls/${poll.share_token}`}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/polls/${poll.share_token}`)
+                }}
+              >
+                <Copy className="h-4 w-4" />
               </Button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Poll Link</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2">
-            <Input
-              value={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/polls/${poll.share_token}`}
-              readOnly
-              className="font-mono text-sm"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/polls/${poll.share_token}`)
-              }}
-            >
-              Copy
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

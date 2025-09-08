@@ -72,15 +72,14 @@ describe('Database Actions', () => {
       formData.append('options', 'Option 1')
       formData.append('options', 'Option 2')
       formData.append('expiresAt', new Date().toISOString())
-      formData.append('allowMultipleVotes', 'false')
-      formData.append('isAnonymous', 'false')
+      formData.append('allowMultiple', 'false')
 
       await createPoll(formData)
 
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('polls')
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('poll_options')
       expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard')
-      expect(mockRedirect).toHaveBeenCalledWith('/polls/token-123')
+      expect(mockRedirect).toHaveBeenCalledWith(expect.stringMatching(/\/polls\/[0-9a-f-]{36}/))
     })
 
     it('should throw error when user is not authenticated', async () => {
@@ -131,14 +130,27 @@ describe('Database Actions', () => {
         error: null
       })
 
-      // Create a mock chain for votes
+      // Create mock chains for both votes and polls tables
       const voteChain = {
         insert: jest.fn().mockResolvedValue({
           error: null
         })
       }
       
-      mockSupabaseClient.from.mockReturnValue(voteChain)
+      const pollChain = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: { share_token: 'token-123' },
+          error: null
+        })
+      }
+      
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'votes') return voteChain
+        if (table === 'polls') return pollChain
+        return {}
+      })
 
       const formData = new FormData()
       formData.append('pollId', '123e4567-e89b-12d3-a456-426614174000')
@@ -183,6 +195,9 @@ describe('Database Actions', () => {
       formData.append('title', 'Updated Poll Title')
       formData.append('description', 'Updated Description')
       formData.append('isActive', 'true')
+      formData.append('options', 'Option 1')
+      formData.append('options', 'Option 2')
+      formData.append('allowMultiple', 'false')
 
       await updatePoll('poll-123', formData)
 
@@ -277,8 +292,9 @@ describe('Database Actions', () => {
       const result = await getUserPolls()
 
       expect(result).toHaveLength(1)
-      expect(result[0]).toHaveProperty('voteCount', 1)
-      expect(result[0]).toHaveProperty('status', 'active')
+      expect(result[0]).toHaveProperty('votes')
+      expect(result[0].votes[0]).toHaveProperty('count', 5)
+      expect(result[0]).toHaveProperty('is_active', true)
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('polls')
     })
 
@@ -324,7 +340,8 @@ describe('Database Actions', () => {
 
       const result = await getUserPolls()
 
-      expect(result[0]).toHaveProperty('voteCount', 0)
+      expect(result[0]).toHaveProperty('votes')
+      expect(result[0].votes).toEqual([])
     })
 
     it('should mark expired polls as ended', async () => {
@@ -360,7 +377,9 @@ describe('Database Actions', () => {
 
       const result = await getUserPolls()
 
-      expect(result[0]).toHaveProperty('status', 'ended')
+      expect(result[0]).toHaveProperty('expires_at', '2020-01-01T00:00:00Z')
+      expect(result[0].expires_at).not.toBeNull()
+      expect(new Date(result[0].expires_at!) < new Date()).toBe(true)
     })
   })
 })

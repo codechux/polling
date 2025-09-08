@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createPoll } from '@/lib/database/actions'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -91,9 +90,19 @@ export default function CreatePollForm() {
       formData.append('allowMultipleVotes', data.allowMultipleVotes.toString())
       formData.append('isAnonymous', data.isAnonymous.toString())
       
-      await createPoll(formData)
-      toast.success('Poll created successfully!')
-      // The createPoll action handles redirect to the poll page internally
+      const response = await fetch('/api/polls', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success('Poll created successfully!')
+        router.push(`/polls/${result.data.share_token}`)
+      } else {
+        throw new Error(result.error)
+      }
     } catch (error) {
       console.error('Create poll error:', error)
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred while creating your poll'

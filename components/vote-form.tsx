@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { submitVote } from '@/lib/database/actions'
+
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -56,9 +56,19 @@ export function VoteForm({ pollId, shareToken, options, allowMultipleVotes }: Vo
         formData.append('optionId', optionId)
       })
       
-      await submitVote(formData)
-      toast.success('Your vote has been submitted!')
-      router.refresh() // Refresh to show updated results
+      const response = await fetch('/api/polls/vote', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success('Your vote has been submitted!')
+        router.refresh() // Refresh to show updated results
+      } else {
+        throw new Error(result.error)
+      }
     } catch (error) {
       console.error('Vote submission error:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to submit your vote'

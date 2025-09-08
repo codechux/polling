@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { deletePoll } from '@/lib/database/actions'
+import { useRouter } from 'next/navigation'
 import { Trash2 } from 'lucide-react'
 import {
   AlertDialog,
@@ -24,11 +24,21 @@ interface DeletePollButtonProps {
 
 export function DeletePollButton({ pollId, pollTitle }: DeletePollButtonProps) {
   const [isDeleting, setIsDeleting] = useState(false)
+  const router = useRouter()
+  
   const handleDelete = async () => {
     try {
       setIsDeleting(true)
-      await deletePoll(pollId)
-      toast.success('Poll deleted successfully')
+      const response = await fetch(`/api/polls/${pollId}`, {
+        method: 'DELETE',
+      })
+      const result = await response.json()
+      if (result.success) {
+        toast.success('Poll deleted successfully')
+        router.refresh()
+      } else {
+        throw new Error(result.error)
+      }
     } catch (error) {
       console.error('Delete poll error:', error)
       toast.error(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.')

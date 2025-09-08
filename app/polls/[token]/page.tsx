@@ -4,9 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { VoteForm } from '@/components/vote-form'
 
 interface PollPageProps {
-  params: {
+  params: Promise<{
     token: string
-  }
+  }>
 }
 
 interface Poll {
@@ -39,8 +39,8 @@ interface Vote {
 }
 
 export default async function PollPage({ params }: PollPageProps) {
-  const supabase = await createSupabaseServerClient()
   const { token } = await params
+  const supabase = await createSupabaseServerClient()
   
   // Get poll by share token
   const { data: poll, error: pollError } = await supabase
@@ -145,8 +145,8 @@ export default async function PollPage({ params }: PollPageProps) {
 }
 
 export async function generateMetadata({ params }: PollPageProps) {
-  const supabase = await createSupabaseServerClient()
   const { token } = await params
+  const supabase = await createSupabaseServerClient()
   
   const { data: poll } = await supabase
     .from('polls')
