@@ -13,6 +13,20 @@ import {
 import { useAuth } from '@/lib/auth-context'
 import { User, LogOut, Settings, BarChart3 } from 'lucide-react'
 
+/**
+ * Top-level navigation bar for the app with brand, primary links, and user actions.
+ *
+ * Renders a responsive header containing a link to the home page and navigation links
+ * (always shows "Browse Polls"; when a user is authenticated also shows "Dashboard" and
+ * "Create Poll"). On the right, displays either:
+ * - an authenticated user dropdown (avatar trigger, optional full name, truncated email,
+ *   links to Dashboard/Create Poll, and a "Sign out" item that invokes `signOut()`), or
+ * - unauthenticated actions ("Sign In" and "Sign Up" links).
+ *
+ * Uses the authentication state provided by `useAuth()` to determine which UI to show.
+ *
+ * @returns The navigation bar as a JSX element.
+ */
 export function Navigation() {
   const { user, signOut } = useAuth()
   

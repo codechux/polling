@@ -31,6 +31,19 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>
 
+/**
+ * Renders a form UI for creating a poll and handles client-side validation and submission.
+ *
+ * The form uses React Hook Form with a Zod schema to validate fields:
+ * title (required), optional description, 2–20 options (each required), duration (days), and allowMultipleVotes.
+ * Options are managed dynamically with add/remove (min 2, max 20). On submit the component:
+ * - Builds a FormData payload (title, optional description, each option as separate `options` entries, `expiresAt` calculated from duration, and `allowMultiple`).
+ * - Calls the `createPoll` server action, shows success/error toasts, and maps server-side validation errors back to form fields via `setError` when possible.
+ *
+ * Side effects: invokes `createPoll`, displays toasts, and sets form-level/server errors. The component manages its own submitting state.
+ *
+ * @returns The form JSX element for creating a poll.
+ */
 function CreatePollFormComponent() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()

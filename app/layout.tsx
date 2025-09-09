@@ -12,7 +12,22 @@ const inter = Inter({ subsets: ["latin"] });
 // export const metadata: Metadata = {
 //   title: "Polling App",
 //   description: "Create and participate in polls",
-// };
+/**
+ * Root HTML layout for the application.
+ *
+ * Renders the top-level document structure including the HTML and body tags,
+ * applies the Inter font class to the body, and wraps page content with
+ * authentication and UI infrastructure.
+ *
+ * The layout provides:
+ * - AuthProvider: authentication context for descendants
+ * - Navigation: site navigation bar
+ * - main: container for the route's `children`
+ * - Toaster: global toast notification UI
+ *
+ * @param children - Page content to be rendered inside the layout's `<main>` element.
+ * @returns The root JSX element containing the full app layout.
+ */
 
 export default function RootLayout({
   children,

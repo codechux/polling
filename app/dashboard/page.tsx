@@ -10,6 +10,16 @@ import { handleServerError } from "@/lib/utils/error-handler";
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
+/**
+ * Server component that fetches the current user's polls and renders the dashboard UI.
+ *
+ * Renders a header with a "Create New Poll" action. If the user has no polls, shows a centered
+ * empty state with a call-to-action to create the first poll. If polls exist, renders them as a
+ * responsive grid of PollCard components. On fetch errors, displays a user-friendly error message
+ * produced by `handleServerError` and offers a "Try Again" button that reloads the page.
+ *
+ * @returns The dashboard content as a JSX element.
+ */
 async function DashboardContent() {
   try {
     const polls = await getUserPolls();

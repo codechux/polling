@@ -11,7 +11,14 @@ import { withErrorHandling, AppError, ErrorType } from '@/lib/utils/error-handle
 // Types
 type AuthenticatedUser = User
 
-// Authentication helper
+/**
+ * Retrieves the currently authenticated user from the server-side Supabase client.
+ *
+ * Checks the server-side Supabase session and returns the authenticated user object.
+ *
+ * @returns The authenticated user.
+ * @throws AppError with type `ErrorType.AUTHENTICATION` and HTTP status 401 when no user is found or an authentication error occurs.
+ */
 export async function getAuthenticatedUser(): Promise<AuthenticatedUser> {
   const supabase = await createSupabaseServerClient()
   const { data: { user }, error } = await supabase.auth.getUser()
@@ -23,7 +30,14 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser> {
   return user
 }
 
-// Optional authentication helper (for anonymous operations)
+/**
+ * Returns the currently authenticated user if available, otherwise null.
+ *
+ * Attempts to create a server-side Supabase client and retrieve the current user.
+ * Returns the AuthenticatedUser when present; returns `null` on any error or if no user is authenticated.
+ *
+ * @returns The authenticated user or `null` when not authenticated or on failure.
+ */
 export async function getOptionalUser(): Promise<AuthenticatedUser | null> {
   try {
     const supabase = await createSupabaseServerClient()

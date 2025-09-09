@@ -36,6 +36,21 @@ interface EditPollFormProps {
   poll: Poll & { poll_options: PollOption[] }
 }
 
+/**
+ * Renders the edit-poll form UI and handles client-side validation, submission, and server-side error mapping.
+ *
+ * The form is initialized from the provided `poll` and uses react-hook-form with a Zod schema to validate:
+ * - title: required (1–200 chars)
+ * - description: optional
+ * - options: 2–20 items, each with value (1–500 chars)
+ * - allowMultipleVotes: boolean
+ *
+ * On submit the component builds a FormData payload and calls `updatePoll`. On success it shows a success toast and navigates to `/dashboard`.
+ * If the server returns validation errors encoded in the error message, they are parsed and applied to the form via `setError`; other errors surface as toast notifications.
+ *
+ * @param poll - The poll to edit. Expected to include basic poll fields plus `poll_options` (array of existing options).
+ * @returns The form JSX for editing a poll.
+ */
 function EditPollFormComponent({ poll }: EditPollFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()

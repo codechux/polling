@@ -17,6 +17,23 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+/**
+ * Provides authentication state and actions to descendant components.
+ *
+ * Wraps children with AuthContext and exposes the current `user`, `session`,
+ * `isLoading` flag, and three async actions: `signIn`, `signUp`, and `signOut`.
+ * The provider initializes and subscribes to Supabase auth state, keeps React
+ * state in sync with the Supabase session, and triggers router navigation when
+ * authentication actions succeed.
+ *
+ * The exposed `signIn` and `signUp` functions will throw a normalized AppError
+ * (e.g., authentication or validation errors) on failure; `signOut` may also
+ * surface errors. Callers should handle these errors (the provider avoids
+ * showing UI toasts for `signIn`/`signUp` so callers can manage feedback).
+ *
+ * @param children - React nodes to be rendered within the provider.
+ * @returns A React element that provides authentication context to its children.
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
