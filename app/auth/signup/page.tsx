@@ -24,6 +24,20 @@ const signUpSchema = z.object({
 
 type SignUpFormData = z.infer<typeof signUpSchema>
 
+/**
+ * Sign-up form component that lets a user create a new account.
+ *
+ * Renders a card-based form with name, email, and password fields validated by `signUpSchema`
+ * via react-hook-form. Shows inline field validation errors and a top-banner error for
+ * server/client-side signup failures (error text is provided by the centralized error handler).
+ * While submitting the form a loading state disables inputs and shows a spinner.
+ *
+ * Side effects:
+ * - Redirects authenticated users to `/dashboard`.
+ * - On successful signup shows a success toast and navigates to `/auth/signin`.
+ *
+ * @returns The Sign Up React component (JSX element).
+ */
 export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

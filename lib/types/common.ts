@@ -4,11 +4,22 @@
 export type FormDataValue = string | File | null
 export type FormDataEntry = FormDataValue | FormDataValue[]
 
-// Type guards for form data
+/**
+ * Type guard that checks whether a FormDataValue is a string.
+ *
+ * @param value - The value to test; may be a string, File, or null.
+ * @returns `true` if `value` is a string (narrows to `string`), otherwise `false`.
+ */
 export function isString(value: FormDataValue): value is string {
   return typeof value === 'string'
 }
 
+/**
+ * Type guard that checks whether a FormDataValue is a File.
+ *
+ * @param value - The value to test.
+ * @returns True if `value` is an instance of `File`; narrows the type to `File`.
+ */
 export function isFile(value: FormDataValue): value is File {
   return value instanceof File
 }

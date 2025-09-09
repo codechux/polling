@@ -38,6 +38,18 @@ interface Vote {
   created_at: string
 }
 
+/**
+ * Server-side React page that renders a poll by its share token.
+ *
+ * Fetches the poll (by `params.token`) and its options and vote records from the database,
+ * aggregates vote counts per option, and renders either a voting form (if the poll is active
+ * and not expired) or the poll results with percentages and progress bars.
+ *
+ * If the poll is not found or an error occurs while loading the poll, this function calls
+ * `notFound()` (producing a 404). If loading poll options fails, it throws `Error('Failed to load poll options')`.
+ *
+ * @param params - A promise-resolved object containing `token`, the poll's share token used to look up the poll.
+ */
 export default async function PollPage({ params }: PollPageProps) {
   const { token } = await params
   const supabase = await createSupabaseServerClient()

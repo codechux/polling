@@ -27,6 +27,19 @@ interface DeletePollButtonProps {
   className?: string
 }
 
+/**
+ * Button that opens a confirmation dialog to delete a poll.
+ *
+ * Renders a trigger button (with optional icon) that opens an AlertDialog. When confirmed it calls the `deletePoll` action for `pollId`, shows success/error toasts, refreshes the Next.js router, and disables interactions while the deletion is in progress.
+ *
+ * @param pollId - ID of the poll to delete.
+ * @param pollTitle - Human-readable poll title shown in the confirmation dialog.
+ * @param variant - Button variant (defaults to `'destructive'`).
+ * @param size - Button size (defaults to `'default'`).
+ * @param showIcon - Whether to render the trash icon on the button (defaults to `true`).
+ * @param className - Optional additional CSS class names applied to the trigger button.
+ * @returns A React element rendering the delete button and confirmation dialog.
+ */
 export function DeletePollButton({ 
   pollId, 
   pollTitle, 

@@ -23,6 +23,23 @@ interface VoteFormProps {
   description?: string
 }
 
+/**
+ * Renders a poll voting form and handles option selection and submission.
+ *
+ * The component displays a list of poll options (radio buttons for single-select or checkboxes for multi-select),
+ * validates that at least one option is selected, and submits the selected option IDs to the backend using `submitVote`.
+ * On success it shows a success toast and navigates to the poll results page for the provided `shareToken`. On failure it
+ * shows an error toast and logs the error. The submit button is disabled while submitting or when no option is selected.
+ *
+ * Selection behavior:
+ * - When `allowMultipleVotes` is true, multiple options may be checked and their IDs are appended to the form data as `optionIds`.
+ * - When false, only one option may be chosen.
+ *
+ * Side effects:
+ * - Calls `submitVote` with a FormData containing `pollId`, `shareToken`, and one or more `optionIds`.
+ * - Uses toast notifications for user feedback.
+ * - Navigates to `/polls/{shareToken}/results` on successful submission.
+ */
 function VoteFormComponent({ 
   pollId, 
   shareToken, 

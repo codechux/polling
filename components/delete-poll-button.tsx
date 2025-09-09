@@ -22,6 +22,17 @@ interface DeletePollButtonProps {
   pollTitle: string
 }
 
+/**
+ * Renders a delete button that opens a confirmation dialog and deletes a poll when confirmed.
+ *
+ * The action sends a DELETE request to `/api/polls/{pollId}`, shows success or error toasts,
+ * and refreshes the router on successful deletion. While the request is in progress the trigger
+ * and confirm button are disabled and the confirm label shows progress.
+ *
+ * @param pollId - ID of the poll to delete
+ * @param pollTitle - Title of the poll shown in the confirmation description
+ * @returns A JSX element containing the alert dialog and delete trigger button
+ */
 function DeletePollButtonComponent({ pollId, pollTitle }: DeletePollButtonProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const router = useRouter()

@@ -59,7 +59,16 @@ export class AppError extends Error {
   }
 }
 
-// Error classification helper
+/**
+ * Normalize an arbitrary thrown value into an AppError with a standardized type and status code.
+ *
+ * Accepts Error instances, strings, or any unknown value and maps common message patterns to
+ * ErrorType categories (e.g., authentication, authorization, validation, network, rate limit,
+ * not found, database). If the input is already an AppError it is returned unchanged.
+ *
+ * @param error - The thrown value to classify (Error, string, or any unknown value)
+ * @returns An AppError whose `type`, `statusCode`, and `userMessage` reflect the classified category
+ */
 export function classifyError(error: unknown): AppError {
   if (error instanceof AppError) {
     return error
@@ -128,7 +137,18 @@ export function classifyError(error: unknown): AppError {
   return new AppError(errorMessage, ErrorType.UNKNOWN, 500)
 }
 
-// Client-side error handler with toast notifications
+/**
+ * Normalize a caught error for client consumption, optionally show a user-facing toast, and return an AppError.
+ *
+ * Classifies the provided `error` into an `AppError`, logs a structured error to the console when running
+ * in development, and — when `showToast` is true — displays a contextual toast notification to the user
+ * (via Sonner) using the error's `userMessage`. The function always returns the resulting `AppError` and
+ * does not throw.
+ *
+ * @param error - The error to normalize (any thrown value).
+ * @param showToast - If true, display a user-facing toast notification (default: `true`).
+ * @returns The normalized AppError instance representing the input error.
+ */
 export function handleClientError(error: unknown, showToast: boolean = true): AppError {
   const appError = classifyError(error)
   
@@ -180,7 +200,13 @@ export function handleClientError(error: unknown, showToast: boolean = true): Ap
   return appError
 }
 
-// Server-side error handler
+/**
+ * Classifies an arbitrary error into an AppError, logs a structured server-side record for monitoring, and returns the resulting AppError.
+ *
+ * The function normalizes the provided `error` via `classifyError`, emits a consistent console.error entry containing message, type, statusCode, stack, and timestamp, and then returns the normalized AppError. It does not rethrow the error.
+ *
+ * @returns The normalized AppError representing the original error.
+ */
 export function handleServerError(error: unknown): AppError {
   const appError = classifyError(error)
   
@@ -196,7 +222,16 @@ export function handleServerError(error: unknown): AppError {
   return appError
 }
 
-// Async error wrapper for server actions
+/**
+ * Wraps an async function so any thrown error is classified and rethrown as an AppError.
+ *
+ * Returns a new async function with the same signature as `fn`. If `fn` rejects, the error
+ * is passed to `handleServerError` and the resulting `AppError` is thrown.
+ *
+ * @param fn - The asynchronous function to wrap.
+ * @returns A function that calls `fn` and converts any thrown error into an `AppError`.
+ * @throws AppError when the wrapped function throws; the original error is classified via `handleServerError`.
+ */
 export function withErrorHandling<T extends any[], R>(
   fn: (...args: T) => Promise<R>
 ) {
@@ -210,7 +245,20 @@ export function withErrorHandling<T extends any[], R>(
   }
 }
 
-// Error boundary helper for React components
+/**
+ * Convert a thrown Error into an error-boundary-friendly fallback payload.
+ *
+ * Returns title, user-facing message, whether retry is allowed, and a retry action
+ * derived from the classified AppError. Authorization errors disable retry.
+ *
+ * @param error - The original Error caught by the React error boundary
+ * @param resetError - Callback to reset the error boundary (executed when retry is chosen)
+ * @returns An object with:
+ *   - title: short UI title for the error
+ *   - message: user-facing message suitable for display
+ *   - canRetry: false when the error is an authorization error, true otherwise
+ *   - onRetry: function to invoke to attempt recovery (calls `resetError`)
+ */
 export function getErrorBoundaryFallback(error: Error, resetError: () => void) {
   const appError = classifyError(error)
   
@@ -222,6 +270,12 @@ export function getErrorBoundaryFallback(error: Error, resetError: () => void) {
   }
 }
 
+/**
+ * Returns a short, user-facing title for an ErrorType used in UI error displays.
+ *
+ * @param type - The error category to convert into a display title.
+ * @returns A concise title suitable for dialogs, toasts, or error boundaries.
+ */
 function getErrorTitle(type: ErrorType): string {
   switch (type) {
     case ErrorType.AUTHENTICATION:

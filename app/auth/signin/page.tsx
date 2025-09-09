@@ -23,6 +23,16 @@ const signInSchema = z.object({
 
 type SignInFormData = z.infer<typeof signInSchema>
 
+/**
+ * Renders the Sign In page: a validated sign-in form that authenticates the user and redirects on success.
+ *
+ * The form uses react-hook-form with a zod resolver for field validation (email, password). While submitting,
+ * inputs are disabled and a loading state is shown. On successful sign-in a toast is shown and the user is
+ * redirected to /dashboard. Server/non-field errors are displayed in a banner above the fields. If a user is
+ * already authenticated, the component redirects to /dashboard on mount/update.
+ *
+ * @returns The JSX for the Sign In page.
+ */
 export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
