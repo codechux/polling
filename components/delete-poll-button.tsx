@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, memo } from 'react'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { Trash2 } from 'lucide-react'
@@ -22,11 +22,12 @@ interface DeletePollButtonProps {
   pollTitle: string
 }
 
-export function DeletePollButton({ pollId, pollTitle }: DeletePollButtonProps) {
+function DeletePollButtonComponent({ pollId, pollTitle }: DeletePollButtonProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const router = useRouter()
   
-  const handleDelete = async () => {
+  // Memoize the delete handler to prevent unnecessary re-renders
+  const handleDelete = useCallback(async () => {
     try {
       setIsDeleting(true)
       const response = await fetch(`/api/polls/${pollId}`, {
@@ -45,7 +46,7 @@ export function DeletePollButton({ pollId, pollTitle }: DeletePollButtonProps) {
     } finally {
       setIsDeleting(false)
     }
-  }
+  }, [pollId, router])
 
   return (
     <AlertDialog>
@@ -71,3 +72,6 @@ export function DeletePollButton({ pollId, pollTitle }: DeletePollButtonProps) {
     </AlertDialog>
   )
 }
+
+// Export memoized component to prevent unnecessary re-renders
+export const DeletePollButton = memo(DeletePollButtonComponent)

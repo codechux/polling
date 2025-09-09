@@ -13,6 +13,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { toast } from 'sonner'
+import { handleClientError, AppError } from '@/lib/utils/error-handler'
 
 // Form validation schema
 const signUpSchema = z.object({
@@ -53,28 +54,8 @@ export default function SignUp() {
       toast.success('Account created successfully! Please check your email to confirm your account.')
       router.push('/auth/signin')
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred during sign up'
-      
-      // Show user-friendly error messages
-      if (errorMessage.includes('User already registered')) {
-        setError('An account with this email already exists. Please sign in instead.')
-        toast.error('Email already registered')
-      } else if (errorMessage.includes('Password should be at least')) {
-        setError('Password must be at least 6 characters long.')
-        toast.error('Password too short')
-      } else if (errorMessage.includes('Invalid email')) {
-        setError('Please enter a valid email address.')
-        toast.error('Invalid email format')
-      } else if (errorMessage.includes('Signup is disabled')) {
-        setError('New account registration is currently disabled.')
-        toast.error('Registration temporarily unavailable')
-      } else if (errorMessage.includes('Network error')) {
-        setError('Network connection error. Please check your internet connection.')
-        toast.error('Connection error - please try again')
-      } else {
-        setError(errorMessage)
-        toast.error('Account creation failed - please try again')
-      }
+      const appError = handleClientError(err)
+      setError(appError.userMessage)
     } finally {
       setIsLoading(false)
     }

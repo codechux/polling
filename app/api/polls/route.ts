@@ -5,6 +5,7 @@ import {
   getUserPolls,
 } from '@/lib/database/actions'
 import { validateCreatePollData } from '@/lib/database/validation'
+import { handleServerError } from '@/lib/utils/error-handler'
 
 export async function POST(request: Request) {
   try {
@@ -14,8 +15,11 @@ export async function POST(request: Request) {
     const poll = await createPoll(formData)
     return NextResponse.json({ success: true, data: poll })
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-    return NextResponse.json({ success: false, error: errorMessage }, { status: 400 })
+    const appError = handleServerError(error)
+    return NextResponse.json(
+      { success: false, error: appError.userMessage },
+      { status: appError.statusCode }
+    )
   }
 }
 
@@ -25,7 +29,10 @@ export async function GET() {
     const polls = await getUserPolls()
     return NextResponse.json({ success: true, data: polls })
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-    return NextResponse.json({ success: false, error: errorMessage }, { status: 401 })
+    const appError = handleServerError(error)
+    return NextResponse.json(
+      { success: false, error: appError.userMessage },
+      { status: appError.statusCode }
+    )
   }
 }

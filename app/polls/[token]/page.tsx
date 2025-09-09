@@ -64,20 +64,23 @@ export default async function PollPage({ params }: PollPageProps) {
     throw new Error('Failed to load poll options')
   }
 
-  // Get vote counts for each option
-  const optionsWithCounts = await Promise.all(
-    (options || []).map(async (option) => {
-      const { count } = await supabase
-        .from('votes')
-        .select('*', { count: 'exact', head: true })
-        .eq('option_id', option.id)
-      
-      return {
-        ...option,
-        vote_count: count || 0
-      }
-    })
-  )
+  // Get vote counts for all options in a single query (optimized)
+  const { data: voteCounts } = await supabase
+    .from('votes')
+    .select('option_id')
+    .in('option_id', (options || []).map(o => o.id))
+  
+  // Create vote count map
+  const voteCountMap = (voteCounts || []).reduce((acc, vote) => {
+    acc[vote.option_id] = (acc[vote.option_id] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+  
+  // Add vote counts to options
+  const optionsWithCounts = (options || []).map(option => ({
+    ...option,
+    vote_count: voteCountMap[option.id] || 0
+  }))
 
   const totalVotes = optionsWithCounts.reduce((sum, option) => sum + option.vote_count, 0)
 

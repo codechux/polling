@@ -5,6 +5,7 @@ import {
   deletePoll,
 } from '@/lib/database/actions'
 import { validateUpdatePollData } from '@/lib/database/validation'
+import { handleServerError } from '@/lib/utils/error-handler'
 
 export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
@@ -15,8 +16,11 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     await updatePoll(pollId, formData)
     return NextResponse.json({ success: true })
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-    return NextResponse.json({ success: false, error: errorMessage }, { status: 400 })
+    const appError = handleServerError(error)
+    return NextResponse.json(
+      { success: false, error: appError.userMessage },
+      { status: appError.statusCode }
+    )
   }
 }
 
@@ -28,7 +32,10 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
     await deletePoll(pollId)
     return NextResponse.json({ success: true })
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-    return NextResponse.json({ success: false, error: errorMessage }, { status: 400 })
+    const appError = handleServerError(error)
+    return NextResponse.json(
+      { success: false, error: appError.userMessage },
+      { status: appError.statusCode }
+    )
   }
 }
