@@ -13,6 +13,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { toast } from 'sonner'
+import { handleClientError, AppError } from '@/lib/utils/error-handler'
 
 // Form validation schema
 const signInSchema = z.object({
@@ -52,25 +53,8 @@ export default function SignIn() {
       toast.success('Welcome back! You have been signed in successfully.')
       router.push('/dashboard')
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred during sign in'
-      
-      // Show user-friendly error messages
-      if (errorMessage.includes('Invalid login credentials')) {
-        setError('Invalid email or password. Please check your credentials and try again.')
-        toast.error('Invalid email or password')
-      } else if (errorMessage.includes('Email not confirmed')) {
-        setError('Please check your email and click the confirmation link before signing in.')
-        toast.error('Please confirm your email address')
-      } else if (errorMessage.includes('Too many requests')) {
-        setError('Too many sign-in attempts. Please wait a moment before trying again.')
-        toast.error('Please wait before trying again')
-      } else if (errorMessage.includes('Network error')) {
-        setError('Network connection error. Please check your internet connection.')
-        toast.error('Connection error - please try again')
-      } else {
-        setError(errorMessage)
-        toast.error('Sign in failed - please try again')
-      }
+      const appError = handleClientError(err)
+      setError(appError.userMessage)
     } finally {
       setIsLoading(false)
     }

@@ -1,10 +1,12 @@
 'use server'
 
-import { createSupabaseServerClient } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
+import { createSupabaseServerClient } from '@/lib/supabase'
 import { validateCreatePollData, validateSubmitVoteData, validateUpdatePollData } from './validation'
+import { PollService, VoteService, PollOptionService } from './services'
+import { withErrorHandling, AppError, ErrorType } from '@/lib/utils/error-handler'
 
 // Types
 type AuthenticatedUser = User
@@ -15,7 +17,7 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser> {
   const { data: { user }, error } = await supabase.auth.getUser()
   
   if (error || !user) {
-    throw new Error('Authentication required')
+    throw new AppError('Authentication required', ErrorType.AUTHENTICATION, 401)
   }
   
   return user
@@ -33,196 +35,116 @@ export async function getOptionalUser(): Promise<AuthenticatedUser | null> {
 }
 
 // Server Actions
-export async function createPoll(formData: FormData) {
-  try {
-    // Get authenticated user
-    const user = await getAuthenticatedUser()
-    
-    // Validate form data
-    const validatedData = validateCreatePollData(formData)
-    
-    const supabase = await createSupabaseServerClient()
-    
-    // Generate unique share token
-    const shareToken = crypto.randomUUID()
-    
-    // Create poll
-    const { data: poll, error: pollError } = await supabase
-      .from('polls')
-      .insert({
-        title: validatedData.title,
-        description: validatedData.description,
-        creator_id: user.id,
-        share_token: shareToken,
-        expires_at: validatedData.expiresAt?.toISOString(),
-        allow_multiple_votes: validatedData.allowMultiple,
-        is_anonymous: false
-      })
-      .select()
-      .single()
+export const createPoll = withErrorHandling(async (formData: FormData) => {
+  // Get authenticated user
+  const user = await getAuthenticatedUser()
+  
+  // Validate form data
+  const validatedData = validateCreatePollData(formData)
+  
+  // Generate unique share token
+  const shareToken = crypto.randomUUID()
+  
+  // Create poll using service
+  const poll = await PollService.create({
+    title: validatedData.title,
+    description: validatedData.description,
+    creator_id: user.id,
+    share_token: shareToken,
+    expires_at: validatedData.expiresAt?.toISOString(),
+    allow_multiple_votes: validatedData.allowMultiple,
+    is_anonymous: false
+  })
 
-    if (pollError) {
-      throw new Error(`Failed to create poll: ${pollError.message}`)
-    }
+  // Create poll options using service
+  const optionsData = validatedData.options.map((text: string, index: number) => ({
+    poll_id: poll.id,
+    text,
+    order_index: index
+  }))
+  
+  await PollOptionService.createMany(optionsData)
 
-    // Create poll options
-     const { error: optionsError } = await supabase
-       .from('poll_options')
-       .insert(
-         validatedData.options.map((text: string, index: number) => ({
-           poll_id: poll.id,
-           text,
-           order_index: index
-         }))
-       )
+  revalidatePath('/dashboard')
+  redirect(`/polls/${shareToken}`)
+})
 
-    if (optionsError) {
-      throw new Error(`Failed to create poll options: ${optionsError.message}`)
-    }
-
-    revalidatePath('/dashboard')
-    redirect(`/polls/${shareToken}`)
-  } catch (error) {
-    console.error('Create poll error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Failed to create poll'
-    throw new Error(errorMessage)
+export const submitVote = withErrorHandling(async (formData: FormData) => {
+  // Validate form data
+  const validatedData = validateSubmitVoteData(formData)
+  
+  // Get optional user for authenticated voting
+  const user = await getOptionalUser()
+  
+  // Submit vote using service
+  await VoteService.create({
+    poll_id: validatedData.pollId,
+    option_id: validatedData.optionId,
+    voter_id: user?.id || null,
+    voter_ip: null // Could be populated from request headers if needed
+  })
+  
+  // Get poll for revalidation
+  const poll = await PollService.findById(validatedData.pollId)
+  
+  if (poll) {
+    revalidatePath(`/polls/${poll.share_token}`)
   }
-}
+  
+  return { success: true }
+})
 
-export async function submitVote(formData: FormData) {
-  try {
-    // Validate form data
-    const validatedData = validateSubmitVoteData(formData)
-    
-    const supabase = await createSupabaseServerClient()
-    
-    // Submit vote
-    const { error } = await supabase
-      .from('votes')
-      .insert({
-        poll_id: validatedData.pollId,
-        option_id: validatedData.optionId,
-        voter_id: null
-      })
-    
-    if (error) {
-      throw new Error(`Failed to submit vote: ${error.message}`)
-    }
-    
-    // Get poll share token for revalidation
-    const { data: poll } = await supabase
-      .from('polls')
-      .select('share_token')
-      .eq('id', validatedData.pollId)
-      .single()
-    
-    if (poll) {
-      revalidatePath(`/polls/${poll.share_token}`)
-    }
-    
-    return { success: true }
-  } catch (error) {
-    console.error('Submit vote error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Failed to submit vote'
-    throw new Error(errorMessage)
+export const updatePoll = withErrorHandling(async (pollId: string, formData: FormData) => {
+  // Get authenticated user
+  const user = await getAuthenticatedUser()
+  
+  // Validate form data
+  const validatedData = validateUpdatePollData(formData)
+  
+  // Verify poll ownership before updating
+  const existingPoll = await PollService.findById(pollId)
+  if (!existingPoll || existingPoll.creator_id !== user.id) {
+    throw new AppError('Poll not found or access denied', ErrorType.AUTHORIZATION, 403)
   }
-}
+  
+  // Update poll using service
+  await PollService.update(pollId, {
+    title: validatedData.title,
+    description: validatedData.description,
+    expires_at: validatedData.expiresAt?.toISOString(),
+    allow_multiple_votes: validatedData.allowMultiple
+  })
+  
+  revalidatePath('/dashboard')
+  revalidatePath(`/polls/${existingPoll.share_token}`)
+  
+  return { success: true }
+})
 
-export async function updatePoll(pollId: string, formData: FormData) {
-  try {
-    // Get authenticated user
-    const user = await getAuthenticatedUser()
-    
-    // Validate form data
-    const validatedData = validateUpdatePollData(formData)
-    
-    const supabase = await createSupabaseServerClient()
-    
-    // Update poll
-    const { error } = await supabase
-      .from('polls')
-      .update({
-        title: validatedData.title,
-        description: validatedData.description,
-        expires_at: validatedData.expiresAt?.toISOString(),
-        allow_multiple_votes: validatedData.allowMultiple
-      })
-      .eq('id', pollId)
-      .eq('creator_id', user.id)
-    
-    if (error) {
-      throw new Error(`Failed to update poll: ${error.message}`)
-    }
-    
-    revalidatePath('/dashboard')
-    revalidatePath(`/polls/${pollId}`)
-    
-    return { success: true }
-  } catch (error) {
-    console.error('Update poll error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Failed to update poll'
-    throw new Error(errorMessage)
+export const deletePoll = withErrorHandling(async (pollId: string) => {
+  // Get authenticated user
+  const user = await getAuthenticatedUser()
+  
+  // Verify poll ownership before deleting
+  const existingPoll = await PollService.findById(pollId)
+  if (!existingPoll || existingPoll.creator_id !== user.id) {
+    throw new AppError('Poll not found or access denied', ErrorType.AUTHORIZATION, 403)
   }
-}
+  
+  // Delete poll using service (cascade will handle options and votes)
+  await PollService.delete(pollId)
+  
+  revalidatePath('/dashboard')
+  
+  return { success: true }
+})
 
-export async function deletePoll(pollId: string) {
-  try {
-    // Get authenticated user
-    const user = await getAuthenticatedUser()
-    
-    const supabase = await createSupabaseServerClient()
-    
-    // Delete poll (cascade will handle options and votes)
-    const { error } = await supabase
-      .from('polls')
-      .delete()
-      .eq('id', pollId)
-      .eq('creator_id', user.id)
-    
-    if (error) {
-      throw new Error(`Failed to delete poll: ${error.message}`)
-    }
-    
-    revalidatePath('/dashboard')
-    
-    return { success: true }
-  } catch (error) {
-    console.error('Delete poll error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Failed to delete poll'
-    throw new Error(errorMessage)
-  }
-}
-
-export async function getUserPolls() {
-  try {
-    // Get authenticated user
-    const user = await getAuthenticatedUser()
-    
-    const supabase = await createSupabaseServerClient()
-    
-    const { data: polls, error } = await supabase
-      .from('polls')
-      .select(`
-        id,
-        title,
-        description,
-        created_at,
-        expires_at,
-        is_active,
-        share_token,
-        votes(count)
-      `)
-      .eq('creator_id', user.id)
-      .order('created_at', { ascending: false })
-    
-    if (error) {
-      throw new Error(`Failed to get user polls: ${error.message}`)
-    }
-    
-    return polls
-  } catch (error) {
-    console.error('Get user polls error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Failed to get user polls'
-    throw new Error(errorMessage)
-  }
-}
+export const getUserPolls = withErrorHandling(async () => {
+  // Get authenticated user
+  const user = await getAuthenticatedUser()
+  
+  // Get user polls using service
+  const polls = await PollService.findByUserId(user.id)
+  
+  return polls
+})

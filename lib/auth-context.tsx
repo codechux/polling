@@ -1,9 +1,10 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
 import { createSupabaseBrowserClient } from './supabase'
 import { User, Session } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
+import { handleClientError, AppError, ErrorType } from './utils/error-handler'
 
 type AuthContextType = {
   user: User | null
@@ -21,12 +22,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
-  const supabase = createSupabaseBrowserClient()
+  
+  // Memoize Supabase client to prevent recreation on every render
+  const supabase = useMemo(() => createSupabaseBrowserClient(), [])
+
+  // Memoize auth state change handler to prevent unnecessary re-subscriptions
+  const handleAuthStateChange = useCallback((_event: any, session: Session | null) => {
+    setSession(session)
+    setUser(session?.user ?? null)
+    router.refresh()
+  }, [router])
 
   useEffect(() => {
+    let mounted = true
+    
     const getSession = async () => {
       setIsLoading(true)
       const { data: { session }, error } = await supabase.auth.getSession()
+      
+      if (!mounted) return
       
       if (error) {
         console.error('Error getting session:', error)
@@ -40,71 +54,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     getSession()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session)
-        setUser(session?.user ?? null)
-        router.refresh()
-      }
-    )
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange)
 
     return () => {
+      mounted = false
       subscription.unsubscribe()
     }
-  }, [router, supabase])
+  }, [supabase, handleAuthStateChange])
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+  // Memoize auth functions to prevent unnecessary re-renders
+  const signIn = useCallback(async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    if (error) {
-      throw error
+      if (error) {
+        throw new AppError(error.message, ErrorType.AUTHENTICATION, 401)
+      }
+
+      router.push('/dashboard')
+    } catch (error) {
+      throw handleClientError(error, false) // Don't show toast here, let the calling component handle it
     }
+  }, [supabase, router])
 
-    router.push('/dashboard')
-  }
-
-  const signUp = async (email: string, password: string, name: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name,
+  const signUp = useCallback(async (email: string, password: string, name: string) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+          },
         },
-      },
-    })
+      })
 
-    if (error) {
+      if (error) {
+        throw new AppError(error.message, ErrorType.VALIDATION, 400)
+      }
+
+      router.push('/auth/signin')
+    } catch (error) {
+      throw handleClientError(error, false) // Don't show toast here, let the calling component handle it
+    }
+  }, [supabase, router])
+
+  const signOut = useCallback(async () => {
+    try {
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        throw new AppError(error.message, ErrorType.AUTHENTICATION, 401)
+      }
+      
+      router.push('/')
+    } catch (error) {
+      handleClientError(error) // Show toast for sign out errors
       throw error
     }
+  }, [supabase, router])
 
-    router.push('/auth/signin')
-  }
-
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    
-    if (error) {
-      throw error
-    }
-    
-    router.push('/')
-  }
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    user,
+    session,
+    isLoading,
+    signIn,
+    signUp,
+    signOut,
+  }), [user, session, isLoading, signIn, signUp, signOut])
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        isLoading,
-        signIn,
-        signUp,
-        signOut,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   )

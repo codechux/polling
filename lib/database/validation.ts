@@ -22,35 +22,86 @@ export const updatePollSchema = z.object({
   expiresAt: z.date().optional()
 })
 
-// Validation helpers
+// Type-safe FormData extraction helpers
+function getFormDataString(formData: FormData, key: string): string | null {
+  const value = formData.get(key)
+  return typeof value === 'string' ? value : null
+}
+
+function getFormDataStringArray(formData: FormData, key: string): string[] {
+  const values = formData.getAll(key)
+  return values.filter((value): value is string => typeof value === 'string')
+}
+
+function getFormDataBoolean(formData: FormData, key: string): boolean {
+  const value = formData.get(key)
+  return value === 'true'
+}
+
+function getFormDataDate(formData: FormData, key: string): Date | undefined {
+  const value = getFormDataString(formData, key)
+  if (!value) return undefined
+  
+  const date = new Date(value)
+  return isNaN(date.getTime()) ? undefined : date
+}
+
+// Validation helpers with proper type safety
 export function validateCreatePollData(formData: FormData) {
+  const title = getFormDataString(formData, 'title')
+  const description = getFormDataString(formData, 'description')
+  const options = getFormDataStringArray(formData, 'options')
+  const allowMultiple = getFormDataBoolean(formData, 'allowMultiple')
+  const expiresAt = getFormDataDate(formData, 'expiresAt')
+
+  if (!title) {
+    throw new Error('Title is required')
+  }
+
   const rawData = {
-    title: formData.get('title') as string,
-    description: formData.get('description') as string || undefined,
-    options: formData.getAll('options') as string[],
-    allowMultiple: formData.get('allowMultiple') === 'true',
-    expiresAt: formData.get('expiresAt') ? new Date(formData.get('expiresAt') as string) : undefined
+    title,
+    description: description || undefined,
+    options,
+    allowMultiple,
+    expiresAt
   }
   
   return createPollSchema.parse(rawData)
 }
 
 export function validateSubmitVoteData(formData: FormData) {
+  const pollId = getFormDataString(formData, 'pollId')
+  const optionId = getFormDataString(formData, 'optionId')
+
+  if (!pollId || !optionId) {
+    throw new Error('Poll ID and Option ID are required')
+  }
+
   const rawData = {
-    pollId: formData.get('pollId') as string,
-    optionId: formData.get('optionId') as string,
+    pollId,
+    optionId
   }
   
   return voteSchema.parse(rawData)
 }
 
 export function validateUpdatePollData(formData: FormData) {
+  const title = getFormDataString(formData, 'title')
+  const description = getFormDataString(formData, 'description')
+  const options = getFormDataStringArray(formData, 'options')
+  const allowMultiple = getFormDataBoolean(formData, 'allowMultiple')
+  const expiresAt = getFormDataDate(formData, 'expiresAt')
+
+  if (!title) {
+    throw new Error('Title is required')
+  }
+
   const rawData = {
-    title: formData.get('title') as string,
-    description: formData.get('description') as string || undefined,
-    options: formData.getAll('options') as string[],
-    allowMultiple: formData.get('allowMultiple') === 'true',
-    expiresAt: formData.get('expiresAt') ? new Date(formData.get('expiresAt') as string) : undefined
+    title,
+    description: description || undefined,
+    options,
+    allowMultiple,
+    expiresAt
   }
   
   return updatePollSchema.parse(rawData)
