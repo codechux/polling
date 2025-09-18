@@ -63,8 +63,8 @@ export default async function EditPollPage({ params }: EditPollPageProps) {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-2xl">
-      <div className="mb-6">
+    <div className="container mx-auto py-6 sm:py-8 px-4 max-w-2xl">
+      <div className="mb-6 sm:mb-8">
         <Link 
           href="/dashboard" 
           className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
@@ -72,42 +72,42 @@ export default async function EditPollPage({ params }: EditPollPageProps) {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Dashboard
         </Link>
-        <h1 className="text-3xl font-bold">Edit Poll</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-2xl sm:text-3xl font-bold">Edit Poll</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mt-2">
           Update your poll settings and manage its status.
         </p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Poll Details</CardTitle>
-            <CardDescription>
+          <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
+            <CardTitle className="text-lg sm:text-xl">Poll Details</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
               Modify your poll's title, description, and status.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form action={handleUpdatePoll} className="space-y-4">
+          <CardContent className="px-4 sm:px-6">
+            <form action={handleUpdatePoll} className="space-y-4 sm:space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="title">Poll Title</Label>
+                <Label htmlFor="title" className="text-sm font-medium">Poll Title</Label>
                 <Input
                   id="title"
                   name="title"
                   type="text"
                   required
                   defaultValue={poll.title}
-                  className="w-full"
+                  className="w-full text-sm sm:text-base"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description (Optional)</Label>
+                <Label htmlFor="description" className="text-sm font-medium">Description (Optional)</Label>
                 <Textarea
                   id="description"
                   name="description"
                   rows={3}
                   defaultValue={poll.description || ''}
-                  className="w-full"
+                  className="w-full text-sm sm:text-base"
                 />
               </div>
 
@@ -117,10 +117,10 @@ export default async function EditPollPage({ params }: EditPollPageProps) {
                   name="isActive"
                   defaultChecked={poll.is_active}
                 />
-                <Label htmlFor="isActive">Poll is active</Label>
+                <Label htmlFor="isActive" className="text-sm font-medium">Poll is active</Label>
               </div>
 
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full text-sm sm:text-base">
                 Update Poll
               </Button>
             </form>
@@ -128,28 +128,30 @@ export default async function EditPollPage({ params }: EditPollPageProps) {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Share Poll</CardTitle>
-            <CardDescription>
+          <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
+            <CardTitle className="text-lg sm:text-xl">Share Poll</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
               Share this link with others to collect votes.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex space-x-2">
+          <CardContent className="px-4 sm:px-6">
+            <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
               <Input
                 readOnly
                 value={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/polls/${poll.share_token}`}
-                className="flex-1"
+                className="flex-1 text-xs sm:text-sm"
               />
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
+                className="w-full sm:w-auto"
                 onClick={() => {
                   navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/polls/${poll.share_token}`)
                 }}
               >
                 <Copy className="h-4 w-4" />
+                <span className="ml-2 sm:hidden">Copy Link</span>
               </Button>
             </div>
           </CardContent>

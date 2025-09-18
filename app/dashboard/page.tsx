@@ -6,6 +6,7 @@ import { getUserPolls } from "@/lib/database/actions";
 import { PollCard } from "@/components/features/polls/PollCard";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { handleServerError } from "@/lib/utils/error-handler";
+import { Plus, BarChart3 } from 'lucide-react'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -15,28 +16,42 @@ async function DashboardContent() {
     const polls = await getUserPolls();
     
     return (
-      <div className="container mx-auto py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold ml-5 md:block hidden">Dashboard</h1>
-          <Button asChild className="mx-auto md:m-0">
-            <Link href="/polls/create">Create New Poll</Link>
+      <div className="container mx-auto px-4 py-6 sm:py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Your Polls</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Manage and track your polls
+            </p>
+          </div>
+          <Button asChild className="w-full sm:w-auto">
+            <Link href="/polls/create">
+              <Plus className="mr-2 h-4 w-4" />
+              Create Poll
+            </Link>
           </Button>
         </div>
-        
+
         {polls.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <h2 className="text-xl font-semibold mb-2">No polls yet</h2>
-              <p className="text-muted-foreground mb-4">
-                Create your first poll to get started!
-              </p>
-              <Button asChild>
-                <Link href="/polls/create">Create Your First Poll</Link>
-              </Button>
+          <Card className="text-center py-8 sm:py-12">
+            <CardContent className="px-4 sm:px-6">
+              <div className="mx-auto max-w-sm">
+                <BarChart3 className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mb-4" />
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">No polls yet</h3>
+                <p className="text-sm sm:text-base text-muted-foreground mb-6">
+                  Get started by creating your first poll to collect opinions and feedback.
+                </p>
+                <Button asChild className="w-full sm:w-auto">
+                  <Link href="/polls/create">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Your First Poll
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {polls.map((poll) => (
               <PollCard key={poll.id} poll={poll} />
             ))}
