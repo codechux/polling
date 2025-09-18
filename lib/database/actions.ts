@@ -48,10 +48,10 @@ export const createPoll = withErrorHandling(async (formData: FormData) => {
   // Create poll using service
   const poll = await PollService.create({
     title: validatedData.title,
-    description: validatedData.description,
+    description: validatedData.description || null,
     creator_id: user.id,
     share_token: shareToken,
-    expires_at: validatedData.expiresAt?.toISOString(),
+    expires_at: validatedData.expiresAt?.toISOString() || null,
     allow_multiple_votes: validatedData.allowMultiple,
     is_anonymous: false
   })
@@ -110,8 +110,8 @@ export const updatePoll = withErrorHandling(async (pollId: string, formData: For
   // Update poll using service
   await PollService.update(pollId, {
     title: validatedData.title,
-    description: validatedData.description,
-    expires_at: validatedData.expiresAt?.toISOString(),
+    description: validatedData.description || null,
+    expires_at: validatedData.expiresAt?.toISOString() || null,
     allow_multiple_votes: validatedData.allowMultiple
   })
   

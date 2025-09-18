@@ -89,23 +89,23 @@ export default async function PollPage({ params }: PollPageProps) {
   const canVote = poll.is_active && !isExpired
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-6 sm:py-8 px-4">
       <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle>{poll.title}</CardTitle>
+        <CardHeader className="px-4 sm:px-6 py-4 sm:py-6">
+          <CardTitle className="text-xl sm:text-2xl">{poll.title}</CardTitle>
           {poll.description && (
-            <CardDescription>{poll.description}</CardDescription>
+            <CardDescription className="text-sm sm:text-base">{poll.description}</CardDescription>
           )}
-          <div className="text-sm text-muted-foreground">
-            Total votes: {totalVotes}
+          <div className="text-xs sm:text-sm text-muted-foreground flex flex-col sm:flex-row gap-1 sm:gap-4">
+            <span>Total votes: {totalVotes}</span>
             {poll.expires_at && (
-              <span className="ml-4">
+              <span>
                 Expires: {new Date(poll.expires_at).toLocaleDateString()}
               </span>
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           {canVote ? (
             <VoteForm 
               pollId={poll.id}
@@ -114,24 +114,26 @@ export default async function PollPage({ params }: PollPageProps) {
               allowMultipleVotes={poll.allow_multiple_votes}
             />
           ) : (
-            <div className="space-y-4">
-              <div className="text-center text-muted-foreground">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="text-center text-sm sm:text-base text-muted-foreground">
                 {isExpired ? 'This poll has expired' : 'This poll is not active'}
               </div>
               
               {/* Show results */}
-              <div className="space-y-2">
+              <div className="space-y-3 sm:space-y-4">
                 {optionsWithCounts.map((option) => {
                   const percentage = totalVotes > 0 ? (option.vote_count / totalVotes) * 100 : 0
                   return (
-                    <div key={option.id} className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span>{option.text}</span>
-                        <span>{option.vote_count} votes ({percentage.toFixed(1)}%)</span>
+                    <div key={option.id} className="space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                        <span className="text-sm sm:text-base font-medium">{option.text}</span>
+                        <span className="text-xs sm:text-sm text-muted-foreground">
+                          {option.vote_count} votes ({percentage.toFixed(1)}%)
+                        </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3">
                         <div
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          className="bg-blue-600 h-2 sm:h-3 rounded-full transition-all duration-300"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>

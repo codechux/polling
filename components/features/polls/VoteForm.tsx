@@ -85,37 +85,39 @@ function VoteFormComponent({
 
   return (
     <div className="container mx-auto max-w-2xl py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="text-xl sm:text-2xl">{title}</CardTitle>
           {description && (
-            <p className="text-muted-foreground">{description}</p>
+            <p className="text-sm sm:text-base text-muted-foreground">{description}</p>
           )}
         </CardHeader>
         
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <Label className="text-base font-medium">
+          <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
+            <div className="space-y-3 sm:space-y-4">
+              <Label className="text-sm sm:text-base font-medium">
                 {allowMultipleVotes ? 'Select one or more options:' : 'Select one option:'}
               </Label>
               
               {options.map((option) => (
-                <div key={option.id} className="flex items-center space-x-3">
+                <div key={option.id} className="flex items-start space-x-3">
                   <input
                     type={allowMultipleVotes ? 'checkbox' : 'radio'}
                     id={option.id}
                     name={allowMultipleVotes ? undefined : 'selectedOption'}
                     checked={selectedOptions.includes(option.id)}
                     onChange={(e) => handleOptionChange(option.id, e.target.checked)}
-                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded mt-1"
                   />
-                  <Label 
-                    htmlFor={option.id} 
-                    className="flex-1 text-sm font-normal cursor-pointer"
-                  >
-                    {option.text}
-                  </Label>
+                  <div className="flex-1 min-w-0">
+                    <Label 
+                      htmlFor={option.id} 
+                      className="text-sm sm:text-base font-medium cursor-pointer block leading-relaxed"
+                    >
+                      {option.text}
+                    </Label>
+                  </div>
                 </div>
               ))}
             </div>
@@ -124,7 +126,7 @@ function VoteFormComponent({
               <Button 
                 type="submit" 
                 disabled={isSubmitting || selectedOptions.length === 0}
-                className="w-full"
+                className="w-full sm:w-auto"
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Vote'}
               </Button>

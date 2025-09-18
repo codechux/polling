@@ -139,71 +139,73 @@ function EditPollFormComponent({ poll }: EditPollFormProps) {
   }, [fields.length, remove])
 
   return (
-    <div className="container mx-auto max-w-2xl py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Edit Poll</CardTitle>
-          <CardDescription>
+    <div className="container mx-auto py-4 px-4 sm:py-8">
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="text-xl sm:text-2xl">Edit Poll</CardTitle>
+          <CardDescription className="text-sm sm:text-base">
             Update your poll details and options.
           </CardDescription>
         </CardHeader>
         
         <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
             {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="title">Poll Title *</Label>
+              <Label htmlFor="title" className="text-sm font-medium">Poll Title *</Label>
               <Input
                 id="title"
                 placeholder="What's your question?"
                 {...register('title')}
-                className={errors.title ? 'border-red-500' : ''}
+                className={`w-full text-sm sm:text-base ${errors.title ? 'border-red-500' : ''}`}
               />
               {errors.title && (
-                <p className="text-sm text-red-500">{errors.title.message}</p>
+                <p className="text-xs sm:text-sm text-red-500">{errors.title.message}</p>
               )}
             </div>
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
+              <Label htmlFor="description" className="text-sm font-medium">Description (Optional)</Label>
               <Textarea
                 id="description"
                 placeholder="Add more context to your poll..."
                 {...register('description')}
-                className={errors.description ? 'border-red-500' : ''}
+                className={`w-full text-sm sm:text-base resize-none ${errors.description ? 'border-red-500' : ''}`}
+                rows={3}
               />
               {errors.description && (
-                <p className="text-sm text-red-500">{errors.description.message}</p>
+                <p className="text-xs sm:text-sm text-red-500">{errors.description.message}</p>
               )}
             </div>
 
             {/* Options */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Poll Options *</Label>
+            <div className="space-y-3 sm:space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <Label className="text-sm font-medium">Poll Options *</Label>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={addOption}
                   disabled={fields.length >= 20}
+                  className="text-xs sm:text-sm w-full sm:w-auto"
                 >
-                  Add Option
+                  Add Option ({fields.length}/20)
                 </Button>
               </div>
               
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {fields.map((field, index) => (
                   <div key={field.id} className="flex gap-2">
                     <div className="flex-1">
                       <Input
                         placeholder={`Option ${index + 1}`}
                         {...register(`options.${index}.value`)}
-                        className={errors.options?.[index]?.value ? 'border-red-500' : ''}
+                        className={`text-sm sm:text-base ${errors.options?.[index]?.value ? 'border-red-500' : ''}`}
                       />
                       {errors.options?.[index]?.value && (
-                        <p className="text-sm text-red-500 mt-1">
+                        <p className="text-xs sm:text-sm text-red-500 mt-1">
                           {errors.options[index]?.value?.message}
                         </p>
                       )}
@@ -212,10 +214,11 @@ function EditPollFormComponent({ poll }: EditPollFormProps) {
                       <Button
                         type="button"
                         variant="outline"
-                        size="sm"
+                        size="icon"
                         onClick={() => removeOption(index)}
+                        className="shrink-0 h-10 w-10"
                       >
-                        Remove
+                        ×
                       </Button>
                     )}
                   </div>
@@ -223,34 +226,35 @@ function EditPollFormComponent({ poll }: EditPollFormProps) {
               </div>
               
               {errors.options && (
-                <p className="text-sm text-red-500">{errors.options.message}</p>
+                <p className="text-xs sm:text-sm text-red-500">{errors.options.message}</p>
               )}
             </div>
 
             {/* Settings */}
-            <div className="space-y-4">
-              <Label>Poll Settings</Label>
+            <div className="space-y-3 sm:space-y-4">
+              <Label className="text-sm font-medium">Poll Settings</Label>
               
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="allowMultipleVotes">Allow Multiple Votes</Label>
-                  <p className="text-sm text-muted-foreground">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="allowMultipleVotes" className="text-sm font-medium">Allow Multiple Votes</Label>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Let users select multiple options
                   </p>
                 </div>
                 <Switch
                   id="allowMultipleVotes"
                   {...register('allowMultipleVotes')}
+                  className="self-start sm:self-center"
                 />
               </div>
             </div>
           </CardContent>
           
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" asChild>
+          <CardFooter className="flex flex-col sm:flex-row gap-3 sm:justify-between px-4 sm:px-6 pb-4 sm:pb-6">
+            <Button variant="outline" asChild className="w-full sm:w-auto order-2 sm:order-1">
               <Link href="/dashboard">Cancel</Link>
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto order-1 sm:order-2">
               {isSubmitting ? 'Updating...' : 'Update Poll'}
             </Button>
           </CardFooter>
