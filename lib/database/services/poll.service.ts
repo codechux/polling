@@ -125,7 +125,7 @@ export class PollService {
         share_token,
         votes:votes(count)
       `)
-      .eq('created_by', userId)
+      .eq('creator_id', userId)
       .order('created_at', { ascending: false })
     
     if (pollsError) {
