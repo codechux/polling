@@ -5,6 +5,7 @@ import { ProtectedRoute }  from "@/components/protected-route";
 import { getUserPolls } from "@/lib/database/actions";
 import { PollCard } from "@/components/features/polls/PollCard";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { ErrorFallback } from "@/components/ui/error-fallback";
 import { handleServerError } from "@/lib/utils/error-handler";
 import { Plus, BarChart3 } from 'lucide-react'
 
@@ -62,19 +63,10 @@ async function DashboardContent() {
   } catch (error) {
     const appError = handleServerError(error)
     return (
-      <div className="container mx-auto py-8">
-        <Card className="text-center py-12">
-          <CardContent>
-            <h2 className="text-xl font-semibold mb-2 text-destructive">Unable to load polls</h2>
-            <p className="text-muted-foreground mb-4">
-              {appError.userMessage}
-            </p>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <ErrorFallback 
+        title="Unable to load polls"
+        message={appError.userMessage}
+      />
     );
   }
 }
