@@ -140,9 +140,101 @@ export type Database = {
           }
         ]
       }
+      discussion_threads: {
+        Row: {
+          id: string
+          poll_id: string
+          parent_id: string | null
+          user_id: string
+          content: string
+          created_at: string
+          updated_at: string
+          is_deleted: boolean
+        }
+        Insert: {
+          id?: string
+          poll_id: string
+          parent_id?: string | null
+          user_id: string
+          content: string
+          created_at?: string
+          updated_at?: string
+          is_deleted?: boolean
+        }
+        Update: {
+          id?: string
+          poll_id?: string
+          parent_id?: string | null
+          user_id?: string
+          content?: string
+          created_at?: string
+          updated_at?: string
+          is_deleted?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discussion_threads_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discussion_threads_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "discussion_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discussion_threads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      discussion_threads_with_users: {
+        Row: {
+          id: string
+          poll_id: string
+          parent_id: string | null
+          user_id: string
+          content: string
+          created_at: string
+          updated_at: string
+          is_deleted: boolean
+          user_name: string | null
+          user_email: string | null
+          user_avatar_url: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discussion_threads_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discussion_threads_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "discussion_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discussion_threads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
@@ -238,15 +330,40 @@ export type Enums<
     ? PublicSchema['Enums'][PublicEnumNameOrOptions]
     : never
 
-// Helper types for easier usage
+// Base table types
 export type Poll = Tables<'polls'>
 export type PollOption = Tables<'poll_options'>
 export type Vote = Tables<'votes'>
+export type DiscussionThread = Tables<'discussion_threads'>
 
+// Insert types
 export type PollInsert = TablesInsert<'polls'>
 export type PollOptionInsert = TablesInsert<'poll_options'>
 export type VoteInsert = TablesInsert<'votes'>
+export type DiscussionThreadInsert = TablesInsert<'discussion_threads'>
 
+// Update types
 export type PollUpdate = TablesUpdate<'polls'>
 export type PollOptionUpdate = TablesUpdate<'poll_options'>
 export type VoteUpdate = TablesUpdate<'votes'>
+export type DiscussionThreadUpdate = TablesUpdate<'discussion_threads'>
+
+// View types
+export type DiscussionThreadWithUser = Database['public']['Views']['discussion_threads_with_users']['Row']
+
+// Extended types for UI components
+export interface DiscussionThreadWithReplies extends DiscussionThreadWithUser {
+  replies?: DiscussionThreadWithReplies[]
+  replyCount?: number
+}
+
+export interface CreateDiscussionThreadData {
+  poll_id: string
+  parent_id?: string | null
+  content: string
+}
+
+export interface UpdateDiscussionThreadData {
+  content?: string
+  is_deleted?: boolean
+}

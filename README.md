@@ -10,6 +10,24 @@ A modern, responsive polling application built with Next.js that allows users to
 - **Poll Management**: Edit, activate/deactivate, and delete your polls
 - **QR Code Sharing**: Generate QR codes for easy poll sharing
 - **Secure Authentication**: User registration and login with Supabase Auth
+- **Discussion Threads**: Engage in threaded conversations on each poll with nested replies
+
+### 💬 Discussion Threads
+The application includes a comprehensive discussion system that allows users to:
+
+- **Threaded Comments**: Create nested discussion threads on any poll
+- **Real-time Updates**: See new comments and replies instantly with Supabase real-time
+- **User Authentication**: Only authenticated users can participate in discussions
+- **Nested Replies**: Support for multi-level comment threading
+- **Mobile Responsive**: Optimized discussion interface for all device sizes
+- **Moderation Ready**: Built with user permissions and content management in mind
+
+#### Discussion Features
+- **Comment Creation**: Add top-level comments to any poll
+- **Reply System**: Reply to existing comments with proper threading
+- **User Attribution**: All comments show author information and timestamps
+- **Real-time Sync**: Comments appear instantly across all connected clients
+- **Responsive Design**: Touch-friendly interface optimized for mobile devices
 
 ### 📱 Mobile Responsive Design
 The application is fully optimized for mobile devices with:
@@ -28,6 +46,7 @@ The application is fully optimized for mobile devices with:
 - **Poll Forms**: Stack vertically on mobile with touch-friendly inputs
 - **Vote Interface**: Mobile-optimized voting with clear result visualization
 - **Poll Cards**: Responsive layout with proper mobile spacing
+- **Discussion Threads**: Mobile-optimized comment interface with touch-friendly interactions
 
 ### 🛠️ Technical Features
 - **Next.js App Router**: Modern routing with server components
@@ -94,9 +113,13 @@ bun dev
 ├── components/           # Reusable components
 │   ├── ui/              # shadcn/ui components
 │   ├── features/        # Feature-specific components
+│   │   ├── polls/       # Poll-related components
+│   │   └── discussions/ # Discussion thread components
 │   └── shared/          # Shared utility components
 ├── lib/                 # Utilities and configurations
 │   ├── database/        # Supabase client and actions
+│   │   ├── actions/     # Server actions for data mutations
+│   │   └── types.ts     # Database type definitions
 │   └── supabase.ts     # Supabase configuration
 └── public/             # Static assets
 ```
